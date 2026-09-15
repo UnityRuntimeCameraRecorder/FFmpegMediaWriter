@@ -81,6 +81,27 @@ namespace Landoria.FFmpegMediaWriter
             }
         }
 
+        // Waits for FFmpeg to finish after both media inputs reach end-of-stream.
+        internal void WaitForExit()
+        {
+            try
+            {
+                if (!_process.HasExited && !_process.WaitForExit(30_000))
+                {
+                    MediaWriterLog.WriteWarning("FFmpeg did not finish within thirty seconds and was stopped.");
+                    _process.StandardInput.WriteLine("q");
+                    if (!_process.WaitForExit(5_000))
+                    {
+                        _process.Kill();
+                    }
+                }
+            }
+            finally
+            {
+                _process.Dispose();
+            }
+        }
+
         // Starts asynchronous MP4 creation with video copying or hardware transcoding.
         internal static FfmpegProcess StartFinalization(
             string ffmpegPath,
@@ -94,7 +115,7 @@ namespace Landoria.FFmpegMediaWriter
                 ? "-c:v copy"
                 : GetHevcOptions(SelectHevcEncoder(executable, gpuVendor));
             string arguments = $"-hide_banner -y -i \"{inputPath}\" {options} " +
-                               $"-c:a aac -b:a 320k -shortest -movflags +faststart \"{outputPath}\"";
+                               $"-c:a aac -b:a 192k -shortest -movflags +faststart \"{outputPath}\"";
             Process process = Process.Start(CreateStartInfo(executable, arguments));
             if (process == null)
             {
@@ -163,7 +184,7 @@ namespace Landoria.FFmpegMediaWriter
             string videoEncoding = encodedVideo ? "-c:v copy" : videoOptions;
             return $"-hide_banner -y {videoInput}" +
                    $"-f f32le -ar {rate} -ac {channels} -i \"{pipe}\" " +
-                   $"{videoEncoding} -c:a pcm_f32le " +
+                   $"-r {frameRate} {videoEncoding} -c:a pcm_f32le " +
                    $"-fps_mode cfr -f matroska \"{output}\"";
         }
 

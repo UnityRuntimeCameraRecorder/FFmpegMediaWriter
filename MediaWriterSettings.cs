@@ -8,6 +8,7 @@ namespace Landoria.FFmpegMediaWriter
         public string FfmpegPath { get; set; }
         public string TemporaryContainerPath { get; set; }
         public string ArchivePath { get; set; }
+        public bool KeepIntermediateFile { get; set; }
         public string OutputPath { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }

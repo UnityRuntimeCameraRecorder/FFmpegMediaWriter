@@ -20,6 +20,7 @@ namespace Landoria.FFmpegMediaWriter
         private readonly NamedPipeServerStream _stream;
         private Thread _writerThread;
         private bool _disposed;
+        private bool _writingCompleted;
 
         // Creates a uniquely named bounded media pipe.
         internal MediaPipe(string prefix, int capacity)
@@ -53,6 +54,16 @@ namespace Landoria.FFmpegMediaWriter
             return !_disposed && _queue.TryAdd(new MediaBuffer { Data = buffer });
         }
 
+        // Enqueues a timestamped buffer without blocking its producer.
+        internal bool Write(byte[] buffer, long timestampMicroseconds)
+        {
+            return !_disposed && !_writingCompleted && _queue.TryAdd(new MediaBuffer
+            {
+                Data = buffer,
+                TimestampMicroseconds = timestampMicroseconds
+            });
+        }
+
         // Enqueues a timestamped indivisible packet while preserving stream integrity.
         internal bool WritePacket(byte[] buffer, long timestampMicroseconds)
         {
@@ -76,6 +87,27 @@ namespace Landoria.FFmpegMediaWriter
             }
         }
 
+        // Prevents new buffers while allowing the writer thread to drain everything already queued.
+        internal void CompleteWriting()
+        {
+            if (_disposed || _writingCompleted)
+            {
+                return;
+            }
+
+            _writingCompleted = true;
+            _queue.CompleteAdding();
+        }
+
+        // Waits for queued buffers to reach FFmpeg before closing the pipe endpoint.
+        internal void WaitForCompletion()
+        {
+            if (_writerThread?.IsAlive == true && !_writerThread.Join(30_000))
+            {
+                MediaWriterLog.WriteWarning("A media pipe did not drain within thirty seconds.");
+            }
+        }
+
         // Stops the writer and releases the pipe and queue resources.
         public void Dispose()
         {
@@ -84,8 +116,8 @@ namespace Landoria.FFmpegMediaWriter
                 return;
             }
 
+            CompleteWriting();
             _disposed = true;
-            _queue.CompleteAdding();
             _stream.Dispose();
             if (_writerThread?.IsAlive == true && !_writerThread.Join(5_000))
             {

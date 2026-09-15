@@ -35,8 +35,9 @@ namespace Landoria.FFmpegMediaWriter
 
         // Queues one raw audio block without blocking its producer.
         public bool WriteAudio(byte[] data) { return _audioPipe?.Write(data) == true; }
-        // Queues one raw video frame without blocking its producer.
-        public bool WriteVideoFrame(byte[] data) { return _videoPipe?.Write(data) == true; }
+        // Queues one timestamped raw video frame without blocking its producer.
+        public bool WriteVideoFrame(byte[] data, long timestampMicroseconds)
+        { return _videoPipe?.Write(data, timestampMicroseconds) == true; }
         // Queues one timestamped encoded packet without breaking packet boundaries.
         public bool WriteVideoPacket(byte[] data, long timestampMicroseconds)
         { return _videoPipe?.WritePacket(data, timestampMicroseconds) == true; }
@@ -50,7 +51,7 @@ namespace Landoria.FFmpegMediaWriter
                 _settings.GraphicsDeviceVendor, _settings.VideoStreamFormat != VideoStreamFormat.RawRgba);
         }
 
-        // Validates finalized output and preserves the intermediate MKV archive.
+        // Validates finalized output and either archives or deletes the intermediate container.
         public void CompleteFinalization()
         {
             if (_finalization == null || !_finalization.HasExited) throw new InvalidOperationException("Finalization is not complete.");
@@ -58,20 +59,42 @@ namespace Landoria.FFmpegMediaWriter
             _finalization.Dispose();
             _finalization = null;
             if (!succeeded) throw new InvalidOperationException($"FFmpeg did not create a valid output file; {_settings.TemporaryContainerPath} was kept.");
-            File.Move(_settings.TemporaryContainerPath, _settings.ArchivePath);
+            if (_settings.KeepIntermediateFile)
+            {
+                File.Move(_settings.TemporaryContainerPath, _settings.ArchivePath);
+            }
+            else
+            {
+                File.Delete(_settings.TemporaryContainerPath);
+            }
         }
 
         // Stops active work without creating an output file.
-        public void Abort() { CloseCapture(); _finalization?.Dispose(); _finalization = null; }
+        public void Abort()
+        {
+            _audioPipe?.Dispose(); _audioPipe = null;
+            _videoPipe?.Dispose(); _videoPipe = null;
+            _capture?.Stop(); _capture = null;
+            _finalization?.Dispose(); _finalization = null;
+        }
         // Releases all writer resources.
         public void Dispose() { Abort(); }
 
         // Closes pipes before requesting an orderly FFmpeg shutdown.
         private void CloseCapture()
         {
-            _audioPipe?.Dispose(); _audioPipe = null;
-            _videoPipe?.Dispose(); _videoPipe = null;
-            _capture?.Stop(); _capture = null;
+            MediaPipe audioPipe = _audioPipe;
+            MediaPipe videoPipe = _videoPipe;
+            _audioPipe = null;
+            _videoPipe = null;
+            audioPipe?.CompleteWriting();
+            videoPipe?.CompleteWriting();
+            audioPipe?.WaitForCompletion();
+            videoPipe?.WaitForCompletion();
+            audioPipe?.Dispose();
+            videoPipe?.Dispose();
+            _capture?.WaitForExit();
+            _capture = null;
         }
     }
 }
