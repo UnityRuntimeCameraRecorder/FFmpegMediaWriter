@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Threading;
 
-namespace Landoria.FFmpegMediaWriter
+namespace FFmpegMediaWriter
 {
     // Streams queued media buffers to FFmpeg through a named pipe.
     internal sealed class MediaPipe : IDisposable
@@ -52,16 +52,6 @@ namespace Landoria.FFmpegMediaWriter
         internal bool Write(byte[] buffer)
         {
             return !_disposed && _queue.TryAdd(new MediaBuffer { Data = buffer });
-        }
-
-        // Enqueues a timestamped buffer without blocking its producer.
-        internal bool Write(byte[] buffer, long timestampMicroseconds)
-        {
-            return !_disposed && !_writingCompleted && _queue.TryAdd(new MediaBuffer
-            {
-                Data = buffer,
-                TimestampMicroseconds = timestampMicroseconds
-            });
         }
 
         // Enqueues a timestamped indivisible packet while preserving stream integrity.

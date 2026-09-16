@@ -1,6 +1,6 @@
 using System;
 
-namespace Landoria.FFmpegMediaWriter
+namespace FFmpegMediaWriter
 {
     // Defines a replaceable destination for synchronized audio and video streams.
     public interface IMediaWriter : IDisposable
@@ -14,8 +14,6 @@ namespace Landoria.FFmpegMediaWriter
         void Start(MediaWriterSettings settings);
         // Queues one raw audio block.
         bool WriteAudio(byte[] data);
-        // Queues one raw video frame with its monotonic presentation timestamp.
-        bool WriteVideoFrame(byte[] data, long timestampMicroseconds);
         // Queues one encoded video packet with its presentation timestamp.
         bool WriteVideoPacket(byte[] data, long timestampMicroseconds);
         // Closes capture and starts output finalization.

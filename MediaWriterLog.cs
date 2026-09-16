@@ -1,6 +1,6 @@
 using System;
 
-namespace Landoria.FFmpegMediaWriter
+namespace FFmpegMediaWriter
 {
     // Routes background writer diagnostics through the active session callbacks.
     internal static class MediaWriterLog

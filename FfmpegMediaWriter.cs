@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Landoria.FFmpegMediaWriter
+namespace FFmpegMediaWriter
 {
     // Writes generic audio and video streams through an external FFmpeg process.
     public sealed class FfmpegMediaWriter : IMediaWriter
@@ -21,6 +21,8 @@ namespace Landoria.FFmpegMediaWriter
         public void Start(MediaWriterSettings settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            if (settings.VideoStreamFormat != VideoStreamFormat.H264 && settings.VideoStreamFormat != VideoStreamFormat.Hevc)
+                throw new NotSupportedException("The media writer accepts only encoded H.264 or HEVC video.");
             MediaWriterLog.Warning = settings.Warning;
             MediaWriterLog.Error = settings.Error;
             _audioPipe = new MediaPipe("MediaWriterAudio", 256);
@@ -29,15 +31,11 @@ namespace Landoria.FFmpegMediaWriter
             _videoPipe.BeginWaitForConnection();
             _capture = FfmpegProcess.Start(settings.FfmpegPath, _videoPipe.Path, _audioPipe.Path,
                 settings.AudioSampleRate, settings.AudioChannels, settings.TemporaryContainerPath,
-                settings.Width, settings.Height, settings.MaximumFrameRate,
-                settings.VideoStreamFormat, settings.GraphicsDeviceVendor);
+                settings.MaximumFrameRate, settings.VideoStreamFormat);
         }
 
         // Queues one raw audio block without blocking its producer.
         public bool WriteAudio(byte[] data) { return _audioPipe?.Write(data) == true; }
-        // Queues one timestamped raw video frame without blocking its producer.
-        public bool WriteVideoFrame(byte[] data, long timestampMicroseconds)
-        { return _videoPipe?.Write(data, timestampMicroseconds) == true; }
         // Queues one timestamped encoded packet without breaking packet boundaries.
         public bool WriteVideoPacket(byte[] data, long timestampMicroseconds)
         { return _videoPipe?.WritePacket(data, timestampMicroseconds) == true; }
@@ -47,8 +45,7 @@ namespace Landoria.FFmpegMediaWriter
         {
             CloseCapture();
             _finalization = FfmpegProcess.StartFinalization(_settings.FfmpegPath,
-                _settings.TemporaryContainerPath, _settings.OutputPath,
-                _settings.GraphicsDeviceVendor, _settings.VideoStreamFormat != VideoStreamFormat.RawRgba);
+                _settings.TemporaryContainerPath, _settings.OutputPath);
         }
 
         // Validates finalized output and either archives or deletes the intermediate container.
