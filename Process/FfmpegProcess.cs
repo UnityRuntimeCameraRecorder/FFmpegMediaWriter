@@ -120,7 +120,15 @@ namespace FFmpegMediaWriter
         // Resolves and validates the configured FFmpeg executable.
         private static string ResolveExecutable(string configuredPath)
         {
-            string executable = string.IsNullOrWhiteSpace(configuredPath) ? "ffmpeg.exe" : configuredPath;
+            if (string.IsNullOrWhiteSpace(configuredPath))
+            {
+                throw new ArgumentException("An explicit FFmpeg executable path is required.", nameof(configuredPath));
+            }
+            string executable = Path.GetFullPath(configuredPath);
+            if (!File.Exists(executable))
+            {
+                throw new FileNotFoundException("The configured FFmpeg executable does not exist.", executable);
+            }
             using (Process process = Process.Start(CreateStartInfo(executable, "-hide_banner -version")))
             {
                 if (process == null || !process.WaitForExit(5_000) || process.ExitCode != 0)

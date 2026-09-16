@@ -20,6 +20,10 @@ namespace FFmpegMediaWriter
         public void Start(MediaWriterSettings settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            if (string.IsNullOrWhiteSpace(settings.FfmpegPath))
+            {
+                throw new ArgumentException("FfmpegPath must specify the external FFmpeg executable.", nameof(settings));
+            }
             if (settings.VideoStreamFormat != VideoStreamFormat.H264 && settings.VideoStreamFormat != VideoStreamFormat.Hevc)
             {
                 throw new NotSupportedException("The media writer accepts only encoded H.264 or HEVC video.");
@@ -27,11 +31,19 @@ namespace FFmpegMediaWriter
 
             MediaWriterLog.Warning = settings.Warning;
             MediaWriterLog.Error = settings.Error;
-            _audioPipe = new MediaPipe("MediaWriterAudio", 256);
-            _videoPipe = new MediaPipe("MediaWriterVideo", 64);
-            _audioPipe.BeginWaitForConnection();
-            _videoPipe.BeginWaitForConnection();
-            _capture = FfmpegProcess.Start(settings.FfmpegPath, _videoPipe.Path, _audioPipe.Path, settings.AudioSampleRate, settings.AudioChannels, settings.TemporaryContainerPath, settings.MaximumFrameRate, settings.VideoStreamFormat);
+            try
+            {
+                _audioPipe = new MediaPipe("MediaWriterAudio", 256);
+                _videoPipe = new MediaPipe("MediaWriterVideo", 64);
+                _audioPipe.BeginWaitForConnection();
+                _videoPipe.BeginWaitForConnection();
+                _capture = FfmpegProcess.Start(settings.FfmpegPath, _videoPipe.Path, _audioPipe.Path, settings.AudioSampleRate, settings.AudioChannels, settings.TemporaryContainerPath, settings.MaximumFrameRate, settings.VideoStreamFormat);
+            }
+            catch
+            {
+                Abort();
+                throw;
+            }
         }
 
         // Queues one raw audio block without blocking its producer.

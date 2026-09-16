@@ -1,9 +1,16 @@
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" />
-  <PropertyGroup><Configuration Condition="'$(Configuration)'==''">Debug</Configuration><Platform Condition="'$(Platform)'==''">AnyCPU</Platform><ProjectGuid>{3E9A684C-8D8B-47A5-AFB5-97070210398E}</ProjectGuid><OutputType>Library</OutputType><RootNamespace>FFmpegMediaWriter</RootNamespace><AssemblyName>FFmpegMediaWriter</AssemblyName><TargetFrameworkVersion>v4.8</TargetFrameworkVersion><LangVersion>10</LangVersion></PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"><DebugSymbols>true</DebugSymbols><OutputPath>bin\Debug\</OutputPath></PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'"><Optimize>true</Optimize><OutputPath>bin\Release\</OutputPath></PropertyGroup>
-  <ItemGroup><Reference Include="System"/><Reference Include="System.Core"/></ItemGroup>
-  <ItemGroup><Compile Include="Properties\AssemblyInfo.cs"/><Compile Include="FfmpegMediaWriter.cs"/><Compile Include="IMediaWriter.cs"/><Compile Include="MediaWriterLog.cs"/><Compile Include="MediaWriterSettings.cs"/><Compile Include="VideoStreamFormat.cs"/><Compile Include="Process\FfmpegProcess.cs"/><Compile Include="Transport\MediaPipe.cs"/></ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RootNamespace>FFmpegMediaWriter</RootNamespace>
+    <AssemblyName>FFmpegMediaWriter</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Properties/AssemblyInfo.cs" />
+    <Compile Include="*.cs" />
+    <Compile Include="Process/*.cs" />
+    <Compile Include="Transport/*.cs" />
+  </ItemGroup>
 </Project>
