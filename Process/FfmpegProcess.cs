@@ -28,7 +28,7 @@ namespace FFmpegMediaWriter
             int audioChannels,
             string output,
             int frameRate,
-            VideoStreamFormat videoStreamFormat)
+            VideoStreamFormat videoStreamFormat, bool presentationTimestamps)
         {
             string executable = ResolveExecutable(ffmpegPath);
             string arguments = BuildArguments(
@@ -38,7 +38,7 @@ namespace FFmpegMediaWriter
                 audioChannels,
                 output,
                 frameRate,
-                videoStreamFormat);
+                videoStreamFormat, presentationTimestamps);
             Process process = Process.Start(CreateStartInfo(executable, arguments));
             if (process == null)
             {
@@ -93,15 +93,18 @@ namespace FFmpegMediaWriter
             }
         }
 
-        // Starts background MP4 muxing with video stream copying and AAC audio encoding.
+        // Starts background MP4 muxing with video stream copying and configurable audio encoding.
         internal static FfmpegProcess StartFinalization(
             string ffmpegPath,
             string inputPath,
-            string outputPath)
+            string outputPath, AudioEncodingCodec audioCodec, int audioBitRate, int audioSampleRate, int audioChannels)
         {
+            if (audioBitRate <= 0 || audioSampleRate < 0 || audioChannels < 0) throw new ArgumentOutOfRangeException(nameof(audioBitRate));
+            string encoder = audioCodec == AudioEncodingCodec.Aac ? "aac" : audioCodec == AudioEncodingCodec.Mp3 ? "libmp3lame" : throw new ArgumentOutOfRangeException(nameof(audioCodec));
+            string audioFormat = (audioSampleRate > 0 ? $" -ar {audioSampleRate}" : "") + (audioChannels > 0 ? $" -ac {audioChannels}" : "");
             string executable = ResolveExecutable(ffmpegPath);
             string arguments = $"-hide_banner -y -i \"{inputPath}\" -c:v copy " +
-                               $"-c:a aac -b:a 192k -shortest -movflags +faststart \"{outputPath}\"";
+                               $"-c:a {encoder} -b:a {audioBitRate}{audioFormat} -shortest -movflags +faststart \"{outputPath}\"";
             Process process = Process.Start(CreateStartInfo(executable, arguments));
             if (process == null)
             {
@@ -160,11 +163,15 @@ namespace FFmpegMediaWriter
             int audioChannels,
             string output,
             int frameRate,
-            VideoStreamFormat videoStreamFormat)
+            VideoStreamFormat videoStreamFormat, bool presentationTimestamps)
         {
             string rate = audioSampleRate.ToString(CultureInfo.InvariantCulture);
             string channels = audioChannels.ToString(CultureInfo.InvariantCulture);
             string inputFormat = GetInputFormat(videoStreamFormat);
+            if (presentationTimestamps)
+                return $"-hide_banner -y -probesize 32768 -analyzeduration 0 -f mpegts -i \"{videoPipe}\" " +
+                       $"-f f32le -ar {rate} -ac {channels} -i \"{audioPipe}\" " +
+                       $"-c:v copy -c:a pcm_f32le -f matroska \"{output}\"";
             return $"-hide_banner -y -probesize 32 -analyzeduration 0 -use_wallclock_as_timestamps 1 " +
                    $"-framerate {frameRate} -f {inputFormat} -i \"{videoPipe}\" " +
                    $"-f f32le -ar {rate} -ac {channels} -i \"{audioPipe}\" " +

@@ -11,6 +11,7 @@ namespace FFmpegMediaWriter
         private FfmpegProcess _capture;
         private FfmpegProcess _finalization;
         private MediaWriterSettings _settings;
+        private EncodedVideoTransport _videoTransport;
         public bool IsVideoInputConnected => _videoPipe?.IsConnected == true;
         public bool AreInputsConnected => IsVideoInputConnected && _audioPipe?.IsConnected == true;
         public bool IsFinalizing => _finalization != null;
@@ -29,6 +30,10 @@ namespace FFmpegMediaWriter
                 throw new NotSupportedException("The media writer accepts only encoded H.264 or HEVC video.");
             }
 
+            if (!Enum.IsDefined(typeof(AudioEncodingCodec), settings.AudioCodec) || settings.AudioBitRate <= 0 || settings.OutputAudioSampleRate < 0 || settings.OutputAudioChannels < 0)
+                throw new ArgumentException("Invalid output audio configuration.", nameof(settings));
+
+            _videoTransport = settings.EncodedVideoHasPresentationTimestamps ? new EncodedVideoTransport(settings.MaximumFrameRate, settings.VideoStreamFormat) : null;
             MediaWriterLog.Warning = settings.Warning;
             MediaWriterLog.Error = settings.Error;
             try
@@ -37,7 +42,7 @@ namespace FFmpegMediaWriter
                 _videoPipe = new MediaPipe("MediaWriterVideo", 64);
                 _audioPipe.BeginWaitForConnection();
                 _videoPipe.BeginWaitForConnection();
-                _capture = FfmpegProcess.Start(settings.FfmpegPath, _videoPipe.Path, _audioPipe.Path, settings.AudioSampleRate, settings.AudioChannels, settings.TemporaryContainerPath, settings.MaximumFrameRate, settings.VideoStreamFormat);
+                _capture = FfmpegProcess.Start(settings.FfmpegPath, _videoPipe.Path, _audioPipe.Path, settings.AudioSampleRate, settings.AudioChannels, settings.TemporaryContainerPath, settings.MaximumFrameRate, settings.VideoStreamFormat, settings.EncodedVideoHasPresentationTimestamps);
             }
             catch
             {
@@ -55,14 +60,14 @@ namespace FFmpegMediaWriter
         // Queues one timestamped encoded packet without breaking packet boundaries.
         public bool WriteVideoPacket(byte[] data, long timestampMicroseconds)
         {
-            return _videoPipe?.WritePacket(data, timestampMicroseconds) == true;
+            return _videoTransport != null ? _videoPipe?.Write(_videoTransport.Wrap(data, timestampMicroseconds)) == true : _videoPipe?.WritePacket(data, timestampMicroseconds) == true;
         }
 
         // Closes capture and starts background MP4 finalization.
         public void FinishCapture()
         {
             CloseCapture();
-            _finalization = FfmpegProcess.StartFinalization(_settings.FfmpegPath, _settings.TemporaryContainerPath, _settings.OutputPath);
+            _finalization = FfmpegProcess.StartFinalization(_settings.FfmpegPath, _settings.TemporaryContainerPath, _settings.OutputPath, _settings.AudioCodec, _settings.AudioBitRate, _settings.OutputAudioSampleRate, _settings.OutputAudioChannels);
         }
 
         // Validates finalized output and either archives or deletes the intermediate container.
