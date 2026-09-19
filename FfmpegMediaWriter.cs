@@ -72,7 +72,7 @@ namespace FFmpegMediaWriter
             _finalization = FfmpegProcess.StartFinalization(_settings.FfmpegPath, _settings.TemporaryContainerPath, _settings.OutputPath, _settings.AudioCodec, _settings.AudioBitRate, _settings.OutputAudioSampleRate, _settings.OutputAudioChannels);
         }
 
-        // Validates finalized output and either archives or deletes the intermediate container.
+        // Validates finalized output and deletes the intermediate container after success.
         public void CompleteFinalization()
         {
             if (_finalization == null || !_finalization.HasExited)
@@ -88,14 +88,7 @@ namespace FFmpegMediaWriter
                 throw new InvalidOperationException($"FFmpeg did not create a valid output file; {_settings.TemporaryContainerPath} was kept.");
             }
 
-            if (_settings.KeepIntermediateFile)
-            {
-                File.Move(_settings.TemporaryContainerPath, _settings.ArchivePath);
-            }
-            else
-            {
-                File.Delete(_settings.TemporaryContainerPath);
-            }
+            File.Delete(_settings.TemporaryContainerPath);
         }
 
         // Stops active work without creating an output file.
