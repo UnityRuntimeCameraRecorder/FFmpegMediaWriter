@@ -78,8 +78,9 @@ namespace FFmpegMediaWriter
             {
                 return _queue.TryAdd(new MediaBuffer { Data = buffer });
             }
-            catch (InvalidOperationException) when (_disposed || _queue.IsAddingCompleted)
+            catch (InvalidOperationException exception) when (_disposed || _queue.IsAddingCompleted)
             {
+                MediaWriterLog.WriteWarning("A media buffer was rejected because the pipe is closing: " + exception.Message);
                 return false;
             }
         }
@@ -101,8 +102,9 @@ namespace FFmpegMediaWriter
                 });
                 return true;
             }
-            catch (InvalidOperationException) when (_disposed || _queue.IsAddingCompleted)
+            catch (InvalidOperationException exception) when (_disposed || _queue.IsAddingCompleted)
             {
+                MediaWriterLog.WriteWarning("A video packet was rejected because the pipe is closing: " + exception.Message);
                 return false;
             }
         }
@@ -177,16 +179,14 @@ namespace FFmpegMediaWriter
                 _connected = true;
                 WriteQueuedData();
             }
-            catch (ObjectDisposedException) when (_disposed)
+            catch (ObjectDisposedException exception) when (_disposed)
             {
+                MediaWriterLog.WriteWarning("The media pipe connection stopped during disposal: " + exception.Message);
                 return;
             }
             catch (Exception exception)
             {
-                if (!_disposed)
-                {
-                    MediaWriterLog.WriteError(exception);
-                }
+                MediaWriterLog.WriteError(exception);
             }
             finally
             {
@@ -220,16 +220,14 @@ namespace FFmpegMediaWriter
                     _stream.Write(buffer.Data, 0, buffer.Data.Length);
                 }
             }
-            catch (ObjectDisposedException) when (_disposed)
+            catch (ObjectDisposedException exception) when (_disposed)
             {
+                MediaWriterLog.WriteWarning("The media pipe writer stopped during disposal: " + exception.Message);
                 return;
             }
             catch (Exception exception)
             {
-                if (!_disposed)
-                {
-                    MediaWriterLog.WriteError(exception);
-                }
+                MediaWriterLog.WriteError(exception);
             }
         }
 
