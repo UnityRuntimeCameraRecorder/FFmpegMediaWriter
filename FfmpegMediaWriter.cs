@@ -31,7 +31,9 @@ namespace FFmpegMediaWriter
             }
 
             if (!Enum.IsDefined(typeof(AudioEncodingCodec), settings.AudioCodec) || settings.AudioBitRate <= 0 || settings.OutputAudioSampleRate < 0 || settings.OutputAudioChannels < 0)
+            {
                 throw new ArgumentException("Invalid output audio configuration.", nameof(settings));
+            }
 
             _videoTransport = settings.EncodedVideoHasPresentationTimestamps ? new EncodedVideoTransport(settings.MaximumFrameRate, settings.VideoStreamFormat) : null;
             MediaWriterLog.Warning = settings.Warning;

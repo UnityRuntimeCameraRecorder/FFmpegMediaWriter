@@ -9,8 +9,14 @@ namespace FFmpegMediaWriter
         internal static Action<Exception> Error { get; set; }
 
         // Reports a warning when a callback is configured.
-        internal static void WriteWarning(string message) { Warning?.Invoke(message); }
+        internal static void WriteWarning(string message)
+        {
+            Warning?.Invoke(message);
+        }
         // Reports an exception when a callback is configured.
-        internal static void WriteError(Exception exception) { Error?.Invoke(exception); }
+        internal static void WriteError(Exception exception)
+        {
+            Error?.Invoke(exception);
+        }
     }
 }

@@ -99,7 +99,10 @@ namespace FFmpegMediaWriter
             string inputPath,
             string outputPath, AudioEncodingCodec audioCodec, int audioBitRate, int audioSampleRate, int audioChannels)
         {
-            if (audioBitRate <= 0 || audioSampleRate < 0 || audioChannels < 0) throw new ArgumentOutOfRangeException(nameof(audioBitRate));
+            if (audioBitRate <= 0 || audioSampleRate < 0 || audioChannels < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(audioBitRate));
+            }
             string encoder = audioCodec == AudioEncodingCodec.Aac ? "aac" : audioCodec == AudioEncodingCodec.Mp3 ? "libmp3lame" : throw new ArgumentOutOfRangeException(nameof(audioCodec));
             string audioFormat = (audioSampleRate > 0 ? $" -ar {audioSampleRate}" : "") + (audioChannels > 0 ? $" -ac {audioChannels}" : "");
             string executable = ResolveExecutable(ffmpegPath);
@@ -169,9 +172,12 @@ namespace FFmpegMediaWriter
             string channels = audioChannels.ToString(CultureInfo.InvariantCulture);
             string inputFormat = GetInputFormat(videoStreamFormat);
             if (presentationTimestamps)
+            {
                 return $"-hide_banner -y -probesize 32768 -analyzeduration 0 -f mpegts -i \"{videoPipe}\" " +
                        $"-f f32le -ar {rate} -ac {channels} -i \"{audioPipe}\" " +
                        $"-c:v copy -c:a pcm_f32le -f matroska \"{output}\"";
+            }
+
             return $"-hide_banner -y -probesize 32 -analyzeduration 0 -use_wallclock_as_timestamps 1 " +
                    $"-framerate {frameRate} -f {inputFormat} -i \"{videoPipe}\" " +
                    $"-f f32le -ar {rate} -ac {channels} -i \"{audioPipe}\" " +
