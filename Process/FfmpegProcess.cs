@@ -123,17 +123,25 @@ namespace FFmpegMediaWriter
             _process.Dispose();
         }
 
-        // Resolves and validates the configured FFmpeg executable.
+        // Resolves and validates FFmpeg inside the configured bin directory.
         private static string ResolveExecutable(string configuredPath)
         {
             if (string.IsNullOrWhiteSpace(configuredPath))
             {
-                throw new ArgumentException("An explicit FFmpeg executable path is required.", nameof(configuredPath));
+                throw new ArgumentException("An explicit FFmpeg bin directory is required.", nameof(configuredPath));
             }
-            string executable = Path.GetFullPath(configuredPath);
+
+            string directory = Path.GetFullPath(configuredPath);
+            if (!Directory.Exists(directory))
+            {
+                throw new DirectoryNotFoundException($"The configured FFmpeg bin directory does not exist: {directory}");
+            }
+
+            string fileName = Path.DirectorySeparatorChar == '\\' ? "ffmpeg.exe" : "ffmpeg";
+            string executable = Path.Combine(directory, fileName);
             if (!File.Exists(executable))
             {
-                throw new FileNotFoundException("The configured FFmpeg executable does not exist.", executable);
+                throw new FileNotFoundException("The configured FFmpeg bin directory does not contain FFmpeg.", executable);
             }
             using (Process process = Process.Start(CreateStartInfo(executable, "-hide_banner -version")))
             {

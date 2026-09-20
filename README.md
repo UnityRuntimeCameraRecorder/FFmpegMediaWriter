@@ -12,7 +12,7 @@ Install [FFmpeg](https://ffmpeg.org/) separately. Its build must support H.264/H
 
 ## Download and setup
 
-Download FFmpeg from the [official download page](https://ffmpeg.org/download.html), extract or install it, and supply its executable path in `MediaWriterSettings.FfmpegPath`. Keep any required companion DLLs and license files.
+Download FFmpeg from the [official download page](https://ffmpeg.org/download.html), extract or install it, and supply its `bin` directory in `MediaWriterSettings.FfmpegPath`. The directory must contain `ffmpeg.exe` on Windows or `ffmpeg` on Linux and macOS. Keep FFprobe, required companion libraries and license files in the same directory.
 
 ## Usage
 
