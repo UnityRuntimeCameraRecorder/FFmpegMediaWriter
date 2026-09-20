@@ -103,7 +103,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to create or update the snapshot prerelease.'
           }
-          gh release delete-asset $env:SNAPSHOT_TAG 'FFmpegMediaWriter-1.0.0-snapshot-netstandard2.0-anycpu.zip' --yes 2>$null
+          foreach ($asset in (gh release view $env:SNAPSHOT_TAG --json assets --jq '.assets[].name')) {
+            gh release delete-asset $env:SNAPSHOT_TAG $asset --yes
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to delete previous snapshot asset: $asset"
+            }
+          }
           gh release upload $env:SNAPSHOT_TAG 'bin/FFmpegMediaWriter-1.0.0-snapshot.zip' --clobber
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to upload the snapshot archive.'
