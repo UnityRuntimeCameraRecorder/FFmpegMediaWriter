@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: snapshot-${{ github.workflow }}-${{ github.ref }}
@@ -61,6 +61,7 @@ jobs:
             configuration = 'Release'
             dllSha256 = (Get-FileHash -LiteralPath $dll.FullName -Algorithm SHA256).Hash
           } | ConvertTo-Json | Set-Content -LiteralPath "$snapshot/build-info.json" -Encoding utf8
+          Compress-Archive -Path "$snapshot/*" -DestinationPath 'bin/FFmpegMediaWriter-1.0.0-snapshot-netstandard2.0-anycpu.zip' -Force
 
       - name: Upload snapshot
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -78,3 +79,31 @@ jobs:
           path: obj/snapshot-build.log
           if-no-files-found: ignore
           retention-days: 30
+
+      - name: Publish snapshot prerelease
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SNAPSHOT_TAG: 1.0.0-snapshot
+        run: |
+          $tagReference = "repos/$env:GITHUB_REPOSITORY/git/refs/tags/$env:SNAPSHOT_TAG"
+          gh api --method PATCH $tagReference -f sha="$env:GITHUB_SHA" -F force=true 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh api --method POST "repos/$env:GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$env:SNAPSHOT_TAG" -f sha="$env:GITHUB_SHA"
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to update the snapshot tag.'
+          }
+          gh release view $env:SNAPSHOT_TAG 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $env:SNAPSHOT_TAG --title $env:SNAPSHOT_TAG --prerelease --notes 'Latest automatic snapshot from the main branch.'
+          } else {
+            gh release create $env:SNAPSHOT_TAG --title $env:SNAPSHOT_TAG --prerelease --notes 'Latest automatic snapshot from the main branch.'
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to create or update the snapshot prerelease.'
+          }
+          gh release upload $env:SNAPSHOT_TAG 'bin/FFmpegMediaWriter-1.0.0-snapshot-netstandard2.0-anycpu.zip' --clobber
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to upload the snapshot archive.'
+          }
