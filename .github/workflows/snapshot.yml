@@ -61,7 +61,7 @@ jobs:
             configuration = 'Release'
             dllSha256 = (Get-FileHash -LiteralPath $dll.FullName -Algorithm SHA256).Hash
           } | ConvertTo-Json | Set-Content -LiteralPath "$snapshot/build-info.json" -Encoding utf8
-          Compress-Archive -Path "$snapshot/*" -DestinationPath 'bin/FFmpegMediaWriter-1.0.0-snapshot-netstandard2.0-anycpu.zip' -Force
+          Compress-Archive -Path "$snapshot/*" -DestinationPath 'bin/FFmpegMediaWriter-1.0.0-snapshot.zip' -Force
 
       - name: Upload snapshot
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -103,7 +103,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to create or update the snapshot prerelease.'
           }
-          gh release upload $env:SNAPSHOT_TAG 'bin/FFmpegMediaWriter-1.0.0-snapshot-netstandard2.0-anycpu.zip' --clobber
+          gh release delete-asset $env:SNAPSHOT_TAG 'FFmpegMediaWriter-1.0.0-snapshot-netstandard2.0-anycpu.zip' --yes 2>$null
+          gh release upload $env:SNAPSHOT_TAG 'bin/FFmpegMediaWriter-1.0.0-snapshot.zip' --clobber
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to upload the snapshot archive.'
           }
