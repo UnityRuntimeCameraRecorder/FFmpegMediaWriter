@@ -53,6 +53,26 @@ namespace FFmpegMediaWriter
             }
         }
 
+        // Starts background finalization from a container left by an interrupted capture.
+        public void Recover(MediaWriterSettings settings)
+        {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            if (!File.Exists(settings.TemporaryContainerPath))
+            {
+                throw new FileNotFoundException(
+                    "The temporary recording container does not exist.",
+                    settings.TemporaryContainerPath);
+            }
+
+            MediaWriterLog.Warning = settings.Warning;
+            MediaWriterLog.Error = settings.Error;
+            _finalization = FfmpegProcess.StartFinalization(
+                settings.FfmpegPath, settings.TemporaryContainerPath,
+                settings.OutputPath, settings.AudioCodec,
+                settings.AudioBitRate, settings.OutputAudioSampleRate,
+                settings.OutputAudioChannels);
+        }
+
         // Queues one raw audio block without blocking its producer.
         public bool WriteAudio(byte[] data)
         {
