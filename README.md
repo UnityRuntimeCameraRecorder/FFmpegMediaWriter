@@ -38,17 +38,17 @@ Our code uses [MIT](LICENSE). FFmpeg's license and codec patent rights are separ
 
 Media Recorder supplies these settings; FFmpegMediaWriter encodes the final audio using FFmpeg's native `aac` encoder.
 
-| Setting | Low | Medium | High |
-|---|---|---|---|
-| Codec | AAC | AAC | AAC |
-| Target bitrate | 128 kbit/s | 192 kbit/s | 192 kbit/s |
-| Sample rate / channels | 48000 Hz / stereo | Same | Same |
+| Setting | Low | Medium | High | Highest |
+|---|---|---|---|---|
+| Codec | AAC | AAC | AAC | AAC |
+| Target bitrate | 96 kbit/s | 128 kbit/s | 192 kbit/s | 192 kbit/s |
+| Sample rate / channels | 48000 Hz / stereo | Same | Same | Same |
 
 Capture accepts interleaved float32 PCM at the Unity input format, preserves PCM in the intermediate MKV, then resamples/mixes and encodes AAC during MP4 finalization. Video is copied without re-encoding. The measured audio bitrate may differ from its target.
 
 API: `AudioCodec`, `AudioBitRate` (bits/s), `OutputAudioSampleRate`, `OutputAudioChannels`. Zero output rate/channels retain the input format. Standalone writer defaults remain MP3 192000 bit/s; the table describes Media Recorder profiles. The FFmpeg executable must include `aac`.
 
-Source: [FFmpeg AAC encoder documentation](https://ffmpeg.org/ffmpeg-codecs.html#aac). The Low/Medium/High bitrate mapping is our profile policy, not an FFmpeg preset. **HDR video is not supported today by the Media Recorder pipeline; AAC has no HDR setting.**
+Source: [FFmpeg AAC encoder documentation](https://ffmpeg.org/ffmpeg-codecs.html#aac). The quality-to-bitrate mapping is our profile policy, not an FFmpeg preset. **HDR video is not supported today by the Media Recorder pipeline; AAC has no HDR setting.**
 
 ## Encoded video timestamps
 
