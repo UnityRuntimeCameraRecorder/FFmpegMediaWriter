@@ -4,6 +4,7 @@
     <LangVersion>10</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Deterministic>false</Deterministic>
     <RootNamespace>FFmpegMediaWriter</RootNamespace>
     <AssemblyName>FFmpegMediaWriter</AssemblyName>
   </PropertyGroup>
