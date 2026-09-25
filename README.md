@@ -2,7 +2,7 @@
 
 A .NET Standard 2.0 library that assembles encoded video and raw audio into an MP4. FFmpeg copies the video without recompressing it and encodes audio as MP3 or AAC.
 
-Used by [UnityRuntimeCameraRecorder](https://github.com/CineCapture/UnityRuntimeCameraRecorder) for audio/video muxing and MP4 finalization. The DLL itself does not depend on Unity or a GPU vendor.
+Used by [UnityRuntimeCameraRecorder](https://github.com/cine-capture/UnityRuntimeCameraRecorder) for audio/video muxing and MP4 finalization. The DLL itself does not depend on Unity or a GPU vendor.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ Feed video first. Check write results: `false` means data was rejected. Stop pro
 
 The intermediate MKV is deleted after success and retained on failure for diagnostics.
 
-For Unity camera and audio capture, use [UnityRuntimeCameraRecorder](https://github.com/CineCapture/UnityRuntimeCameraRecorder).
+For Unity camera and audio capture, use [UnityRuntimeCameraRecorder](https://github.com/cine-capture/UnityRuntimeCameraRecorder).
 
 ## Build
 
